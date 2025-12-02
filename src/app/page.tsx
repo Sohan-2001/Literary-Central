@@ -36,7 +36,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-background">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background">
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight font-headline">
           Welcome to Literary Central
@@ -49,6 +49,6 @@ export default function LandingPage() {
           Sign in with Google
         </Button>
       </div>
-    </div>
+    </main>
   );
 }
