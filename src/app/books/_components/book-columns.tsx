@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import type { Author, PopulatedBook } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
@@ -34,8 +34,9 @@ import { MoreHorizontal, ArrowUpDown } from "lucide-react";
 import Image from "next/image";
 import React from "react";
 import { BookForm } from "./book-form";
-import { deleteBook } from "./book-actions";
 import { useToast } from "@/hooks/use-toast";
+import { useDatabase } from "@/firebase";
+import { ref, remove } from "firebase/database";
 
 function ActionsCell({
   book,
@@ -46,19 +47,21 @@ function ActionsCell({
 }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const { toast } = useToast();
+  const database = useDatabase();
 
   const handleDelete = async () => {
-    const result = await deleteBook(book.id);
-    if (result.message.startsWith('Database Error:')) {
+    try {
+      const bookRef = ref(database, `books/${book.id}`);
+      await remove(bookRef);
+      toast({
+        title: 'Success',
+        description: 'Book deleted successfully.',
+      });
+    } catch (e: any) {
       toast({
         variant: 'destructive',
         title: 'Error deleting book',
-        description: result.message,
-      });
-    } else {
-       toast({
-        title: 'Success',
-        description: result.message,
+        description: e.message || 'An unknown error occurred.',
       });
     }
   };

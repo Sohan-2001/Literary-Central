@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useActionState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useActionState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,7 +27,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Author, Book } from '@/lib/types';
-import { saveBook, type BookFormState } from '../_components/book-actions';
+import { saveBookAction, type BookFormState } from '../_components/book-actions';
+import { useDatabase } from '@/firebase';
+import { ref, set, update } from 'firebase/database';
 
 const bookFormSchema = z.object({
   id: z.string().optional(),
@@ -47,12 +50,17 @@ interface BookFormProps {
   onSuccess?: () => void;
 }
 
-const initialState: BookFormState = {};
+const initialState: BookFormState = {
+    message: '',
+    errors: {},
+    success: false,
+};
 
 export function BookForm({ book, authors, onSuccess }: BookFormProps) {
-  const [state, formAction] = useActionState(saveBook, initialState);
+  const [state, formAction] = useActionState(saveBookAction, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const database = useDatabase();
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
@@ -68,32 +76,55 @@ export function BookForm({ book, authors, onSuccess }: BookFormProps) {
           status: 'available',
         },
   });
+  
+  const handleClientSubmit = async (data: BookFormValues) => {
+      try {
+        if (book?.id) {
+          // Update existing book
+          const bookRef = ref(database, `books/${book.id}`);
+          await update(bookRef, data);
+        } else {
+          // Create new book
+          const newBookId = 'book' + new Date().getTime() + Math.floor(Math.random() * 1000);
+          const bookRef = ref(database, `books/${newBookId}`);
+          await set(bookRef, { ...data, id: newBookId });
+        }
+        toast({
+          title: 'Success',
+          description: 'Book saved successfully.'
+        });
+        onSuccess?.();
+      } catch (e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Database Error',
+            description: e.message || 'Could not save book.',
+        });
+      }
+  }
+
 
   useEffect(() => {
-    if (state.message) {
-      if (state.errors) {
+    if (state.message && !state.success) {
         toast({
           variant: 'destructive',
           title: 'Error saving book',
           description: state.message,
         });
-      } else {
-        toast({
-          title: 'Success',
-          description: state.message,
-        });
-        onSuccess?.();
-        form.reset();
-        formRef.current?.reset();
-      }
     }
-  }, [state, toast, onSuccess, form]);
+  }, [state, toast]);
 
   return (
     <Form {...form}>
       <form
         ref={formRef}
         action={formAction}
+        onSubmit={form.handleSubmit(() => {
+            // Trigger the server action
+            formAction(new FormData(formRef.current!));
+            // Also trigger the client-side database logic
+            handleClientSubmit(form.getValues());
+        })}
         className="space-y-4"
       >
         {book && <input type="hidden" name="id" value={book.id} />}
