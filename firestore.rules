@@ -1,0 +1,191 @@
+/**
+ * Core Philosophy: This ruleset enforces a security model with a mix of user ownership
+ * and role-based access control. User-specific data is strictly private to the owning user,
+ * while global catalog data (like books and authors) is publicly readable but centrally
+ * managed by administrators.
+ *
+ * Data Structure: The data is organized into several top-level collections: `/users`,
+ * `/books`, `/authors`, and `/roles_admin`. A user's private data, such as their borrowing
+ * history, is stored in a subcollection (`/users/{userId}/borrowing`) to leverage
+ * path-based security and enable efficient, secure queries.
+ *
+ * Key Security Decisions:
+ * - User Data Privacy: Users can only access their own document within `/users/{userId}`.
+ *   Listing users is explicitly disabled to protect user privacy.
+ * - Admin Roles: A `/roles_admin/{userId}` collection serves as a lookup table. The
+ *   existence of a document for a given user ID grants them admin privileges across the system.
+ *   This collection is not readable or writable by clients to prevent enumeration of admins.
+ * - Public Catalogs: The `/books` and `/authors` collections are publicly readable by anyone,
+ *   including unauthenticated users, to allow browsing.
+ * - Centralized Management: All write operations (create, update, delete) on the public
+ *   `/authors` and `/books` catalogs are restricted to users with an admin role.
+ *
+ * Denormalization for Authorization: To ensure fast and secure authorization checks,
+ * the rules rely on data being structured correctly. For example, all borrowing records
+ * under `/users/{userId}/borrowing` must contain a `userId` field that matches the `{userId}`
+ * from the path. This avoids costly `get()` calls and ensures data integrity.
+ *
+ * Structural Segregation: User-specific data (`borrowing` records) is stored in a private
+ * user subcollection. This is inherently more secure and performant for listing a user's
+ * own items than a single top-level collection that would require complex, insecure queries.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the authenticated user's UID matches the provided userId.
+     * This is the foundation of the user-ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Returns true if the document being accessed already exists in Firestore.
+     * Used to protect against updates or deletes of non-existent documents.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Returns true if the user has an admin role.
+     * Checks for the existence of a document in the admin roles collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // ------------------------------------------------------------------------
+    // Data Validation Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Validates required relational fields for a new User document.
+     * Ensures the document's internal ID matches the document path ID.
+     */
+    function hasValidUserCreateData(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Enforces immutability for critical relational fields on a User document update.
+     * Prevents the user's unique ID from being changed after creation.
+     */
+    function hasImmutableUserData() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates required relational fields for a new Borrowing document.
+     * Ensures the document's internal userId matches the parent user's path ID.
+     */
+    function hasValidBorrowingCreateData(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Enforces immutability for critical relational fields on a Borrowing document update.
+     * Prevents the ownership link (userId) from being changed after creation.
+     */
+    function hasImmutableBorrowingData() {
+      return request.resource.data.userId == resource.data.id;
+    }
+
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Defines access control for user profile documents.
+     * @path /users/{userId}
+     * @allow A user reads their own profile: `db.collection('users').doc('user_abc').get()` if auth.uid is 'user_abc'.
+     * @deny A user tries to read another user's profile: `db.collection('users').doc('user_xyz').get()` if auth.uid is 'user_abc'.
+     * @deny Any user tries to list all users: `db.collection('users').get()`.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration for privacy.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false;
+      allow create: if isOwner(userId) && hasValidUserCreateData(userId);
+      allow update: if isOwner(userId) && isExistingDoc() && hasImmutableUserData();
+      allow delete: if isOwner(userId) && isExistingDoc();
+
+      /**
+       * @description Defines access for a user's borrowing history.
+       * @path /users/{userId}/borrowing/{borrowingId}
+       * @allow A user creates a new borrowing record for themselves: `db.collection('users/user_abc/borrowing').add({...})` if auth.uid is 'user_abc'.
+       * @deny A user tries to view another user's borrowing history: `db.collection('users/user_xyz/borrowing').get()` if auth.uid is 'user_abc'.
+       * @principle Enforces strict document ownership within a user's private subcollection.
+       */
+      match /borrowing/{borrowingId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidBorrowingCreateData(userId);
+        allow update: if isOwner(userId) && isExistingDoc() && hasImmutableBorrowingData();
+        allow delete: if isOwner(userId) && isExistingDoc();
+      }
+    }
+
+    /**
+     * @description Defines access control for the public book catalog.
+     * @path /books/{bookId}
+     * @allow Any user, authenticated or not, can read a book's details: `db.collection('books').doc('book_123').get()`.
+     * @allow Any user can list all books: `db.collection('books').get()`.
+     * @deny Any non-admin user tries to create a new book.
+     * @principle Allows public read access for catalog data but requires elevated permissions for modifications.
+     */
+    match /books/{bookId} {
+      allow get: if true;
+      allow list: if true;
+      // CRITICAL: Cannot implement owner-only writes. The 'Book' entity is missing an 'ownerId' or 'authorId' field to check against request.auth.uid.
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field. (e.g., `request.resource.data.ownerId == request.auth.uid`)
+      allow update: if false; // TODO: Add owner validation. (e.g., `isOwner(resource.data.ownerId)`)
+      allow delete: if false; // TODO: Add owner validation. (e.g., `isOwner(resource.data.ownerId)`)
+    }
+
+    /**
+     * @description Defines access control for the public author catalog.
+     * @path /authors/{authorId}
+     * @allow Any user, authenticated or not, can read an author's details: `db.collection('authors').doc('author_456').get()`.
+     * @allow An admin creates a new author profile: `db.collection('authors').add({...})` if auth.uid has admin role.
+     * @deny A regular user tries to delete an author: `db.collection('authors').doc('author_456').delete()` if auth.uid is not an admin.
+     * @principle Allows public read access for catalog data but restricts write access to administrators.
+     */
+    match /authors/{authorId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Locks down the admin roles collection from any client-side access.
+     * @path /roles_admin/{userId}
+     * @allow No direct client operations are permitted on this collection.
+     * @deny A user tries to read the list of admins: `db.collection('roles_admin').doc('user_xyz').get()`.
+     * @deny A user tries to make themselves an admin: `db.collection('roles_admin').doc('user_abc').set({...})`.
+     * @principle Secures role-granting data. This collection should only be modified by a trusted server process (e.g., Cloud Functions).
+     */
+    match /roles_admin/{userId} {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

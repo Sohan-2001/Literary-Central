@@ -1,0 +1,232 @@
+{
+  "entities": {
+    "Book": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Book",
+      "type": "object",
+      "description": "Represents a book in the library.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the book."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the book."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to the Author of the book. (Relationship: Author 1:N Book)"
+        },
+        "isbn": {
+          "type": "string",
+          "description": "The ISBN of the book."
+        },
+        "publicationDate": {
+          "type": "string",
+          "description": "The date the book was published.",
+          "format": "date-time"
+        },
+        "genre": {
+          "type": "string",
+          "description": "The genre of the book."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "authorId",
+        "isbn",
+        "publicationDate",
+        "genre"
+      ]
+    },
+    "Author": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Author",
+      "type": "object",
+      "description": "Represents an author.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the author."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the author."
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short biography of the author."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "bio"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName"
+      ]
+    },
+    "Borrowing": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Borrowing",
+      "type": "object",
+      "description": "Represents a borrowing record of a book by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the borrowing record."
+        },
+        "bookId": {
+          "type": "string",
+          "description": "Reference to the Book being borrowed. (Relationship: Book 1:N Borrowing)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User borrowing the book. (Relationship: User 1:N Borrowing)"
+        },
+        "borrowDate": {
+          "type": "string",
+          "description": "The date the book was borrowed.",
+          "format": "date-time"
+        },
+        "returnDate": {
+          "type": "string",
+          "description": "The date the book was returned. Null if the book is still borrowed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "bookId",
+        "userId",
+        "borrowDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/authors/{authorId}",
+        "definition": {
+          "entityName": "Author",
+          "schema": {
+            "$ref": "#/backend/entities/Author"
+          },
+          "description": "Stores author profiles. Includes Author 'id' as the document ID.",
+          "params": [
+            {
+              "name": "authorId",
+              "description": "The unique identifier of the author."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/books/{bookId}",
+        "definition": {
+          "entityName": "Book",
+          "schema": {
+            "$ref": "#/backend/entities/Book"
+          },
+          "description": "Stores book information. Includes Book 'id' as the document ID.",
+          "params": [
+            {
+              "name": "bookId",
+              "description": "The unique identifier of the book."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Includes User 'id' as the document ID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/borrowing/{borrowingId}",
+        "definition": {
+          "entityName": "Borrowing",
+          "schema": {
+            "$ref": "#/backend/entities/Borrowing"
+          },
+          "description": "Stores borrowing records for each user. Includes User 'id' from parent path, and denormalized 'bookId' for efficient queries. The borrowingId is the unique identifier for the borrowing record.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "borrowingId",
+              "description": "The unique identifier of the borrowing record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection to store user IDs with admin roles. Existence of a document indicates admin access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who is an admin."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to manage books, authors, users, and borrowing records for the Literary Central application. It prioritizes authorization independence and supports the required CRUD operations and list filtering.\n\n*   **Authors:** Authors are stored in a top-level `/authors` collection. This is straightforward since there's no direct user ownership. Authors are globally accessible and manageable by authorized roles (e.g., admins).\n*   **Books:** Books are stored in a top-level `/books` collection.  Authorization can be managed through a `members` map for collaborative editing or an `ownerId` field for individual ownership if required. Since we don't have explicit roles for books, the base structure assumes public read access and restricted write access based on the `ownerId`.\n*   **Users:** User profiles are stored in a `/users/{userId}` collection, providing path-based ownership.  This ensures that only the user (and potentially admins) can read/write their profile data.\n*   **Borrowing Records:** Borrowing records are stored within each user's document at `/users/{userId}/borrowing/{borrowingId}`. The borrowing records include the `bookId`. This allows listing of all books borrowed by a user. To ensure authorization independence, the `userId` and book details (e.g., book title) are denormalized into the borrowing document.\n\n**Authorization Independence:** The structure avoids `get()` calls in security rules by denormalizing authorization data. For example, the `borrowing` documents store the `userId`. If additional access control is needed for books, the `ownerId` is denormalized from User into each Book document.\n\n**QAPs (Rules are not Filters):**\n*   Secure `list` operations are supported by structural segregation and path-based ownership. Listing books for a user is done via `/users/{userId}/borrowing`. Listing all books is done via `/books`, access to which can be controlled via a `members` map.\n\n**Important considerations:**\n\n*   Admin Role: A separate collection `/roles_admin/{userId}` can be used to grant admin privileges. The security rules would check for the existence of a document in this collection to determine if a user has admin rights.\n*   Scalability: The structure is scalable because it avoids complex queries and nested `get()` calls in security rules. Denormalization ensures that reads are efficient.\n*   Denormalization Strategy: When a book is borrowed, the `userId` is copied into the `/users/{userId}/borrowing/{borrowingId}` document. This duplication of data is necessary to ensure that security rules can be enforced without having to read the book document, keeping them fast and efficient."
+  }
+}
