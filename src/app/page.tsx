@@ -36,7 +36,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+    <div className="flex h-screen w-full items-center justify-center bg-background">
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight font-headline">
           Welcome to Literary Central
