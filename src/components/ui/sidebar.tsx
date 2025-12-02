@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import Link from "next/link";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -535,11 +536,12 @@ const sidebarMenuButtonVariants = cva(
 
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<"button"> & {
+  Omit<React.ComponentProps<'button'>, 'as'> & {
     as?: 'a' | 'button'
     asChild?: boolean
     isActive?: boolean
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
+    href?: string;
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -551,23 +553,28 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
+      href,
       ...props
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : Tag
+    const Comp = asChild ? Slot : (Tag === 'a' ? Link : Tag);
     const { isMobile, state } = useSidebar()
+    
+    const buttonProps = {
+        ref: ref as any,
+        "data-sidebar": "menu-button",
+        "data-size": size,
+        "data-active": isActive,
+        className: cn(sidebarMenuButtonVariants({ variant, size }), className),
+        ...props,
+      };
 
-    const button = (
-      <Comp
-        ref={ref}
-        data-sidebar="menu-button"
-        data-size={size}
-        data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-        {...props}
-      />
-    )
+
+    const button = React.createElement(
+        Comp,
+        Comp === Link ? { ...buttonProps, href: href || '' } : buttonProps,
+      );
 
     if (!tooltip) {
       return button
