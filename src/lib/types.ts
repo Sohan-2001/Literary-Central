@@ -35,6 +35,8 @@ export type BorrowedRecord = {
 export type PopulatedBook = Omit<Book, 'authorId'> & { author: Author };
 export type PopulatedBorrowedRecord = {
   id: string;
+  bookId: string;
+  userId: string;
   bookTitle: string;
   authorName: string;
   userName: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Author, PopulatedBook } from "@/lib/types";
+import type { Author, PopulatedBook, User } from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -38,9 +38,10 @@ import { BookForm } from "./book-form";
 interface BookClientPageProps {
   books: PopulatedBook[];
   authors: Author[];
+  users: User[];
 }
 
-export function BookClientPage({ books, authors }: BookClientPageProps) {
+export function BookClientPage({ books, authors, users }: BookClientPageProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -49,7 +50,7 @@ export function BookClientPage({ books, authors }: BookClientPageProps) {
     React.useState<VisibilityState>({});
   const [isFormOpen, setIsFormOpen] = React.useState(false);
 
-  const bookColumns = React.useMemo(() => getBookColumns(authors, () => setIsFormOpen(true)), [authors]);
+  const bookColumns = React.useMemo(() => getBookColumns(authors, users), [authors, users]);
 
   const table = useReactTable({
     data: books,

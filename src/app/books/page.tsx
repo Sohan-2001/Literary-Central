@@ -2,14 +2,16 @@
 
 import { useList } from "@/firebase";
 import { BookClientPage } from "./_components/book-client-page";
-import { Book, Author, PopulatedBook } from "@/lib/types";
+import { Book, Author, PopulatedBook, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BooksPage() {
   const { data: books, isLoading: booksLoading } = useList<Book>('books');
   const { data: authors, isLoading: authorsLoading } = useList<Author>('authors');
+  const { data: users, isLoading: usersLoading } = useList<User>('users');
 
-  if (booksLoading || authorsLoading) {
+
+  if (booksLoading || authorsLoading || usersLoading) {
     return (
       <div className="flex flex-col gap-6">
         <header className="flex items-center justify-between">
@@ -33,5 +35,5 @@ export default function BooksPage() {
   });
 
 
-  return <BookClientPage books={populatedBooks} authors={authors || []} />;
+  return <BookClientPage books={populatedBooks} authors={authors || []} users={users || []} />;
 }

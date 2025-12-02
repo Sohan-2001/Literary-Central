@@ -1,6 +1,6 @@
 'use client';
 
-import type { Author, PopulatedBook } from "@/lib/types";
+import type { Author, PopulatedBook, User } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -36,20 +35,33 @@ import React from "react";
 import { BookForm } from "./book-form";
 import { useToast } from "@/hooks/use-toast";
 import { useDatabase } from "@/firebase";
-import { ref, remove } from "firebase/database";
+import { ref, remove, update } from "firebase/database";
+import { BorrowForm } from "./borrow-form";
 
 function ActionsCell({
   book,
   authors,
+  users,
 }: {
   book: PopulatedBook;
   authors: Author[];
+  users: User[];
 }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [isBorrowDialogOpen, setIsBorrowDialogOpen] = React.useState(false);
   const { toast } = useToast();
   const database = useDatabase();
 
   const handleDelete = async () => {
+    if (book.status === 'borrowed') {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Cannot delete a book that is currently on loan.',
+      });
+      return;
+    }
+
     try {
       const bookRef = ref(database, `books/${book.id}`);
       await remove(bookRef);
@@ -70,50 +82,71 @@ function ActionsCell({
   return (
     <>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <AlertDialog>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setIsEditDialogOpen(true);
-                }}
-              >
-                Edit Book
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={book.status === "borrowed"}>
-                Borrow Book
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <AlertDialogTrigger asChild>
-                <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                  Delete Book
+        <Dialog open={isBorrowDialogOpen} onOpenChange={setIsBorrowDialogOpen}>
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setIsEditDialogOpen(true);
+                  }}
+                >
+                  Edit Book
                 </DropdownMenuItem>
-              </AlertDialogTrigger>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete the book &quot;{book.title}&quot;. This
-                action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
+                <DropdownMenuItem 
+                  disabled={book.status === "borrowed"}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setIsBorrowDialogOpen(true);
+                  }}
+                >
+                  Borrow Book
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem 
+                    className="text-destructive" 
+                    onSelect={(e) => e.preventDefault()}
+                    disabled={book.status === 'borrowed'}
+                  >
+                    Delete Book
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete the book &quot;{book.title}&quot;. This
+                  action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Borrow &quot;{book.title}&quot;</DialogTitle>
+            </DialogHeader>
+            <BorrowForm
+              book={book}
+              users={users}
+              onSuccess={() => setIsBorrowDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit &quot;{book.title}&quot;</DialogTitle>
@@ -129,7 +162,7 @@ function ActionsCell({
   );
 }
 
-export const getBookColumns = (authors: Author[], onEdit: (bookId: string) => void): ColumnDef<PopulatedBook>[] => [
+export const getBookColumns = (authors: Author[], users: User[]): ColumnDef<PopulatedBook>[] => [
   {
     accessorKey: "coverImage",
     header: "Cover",
@@ -188,7 +221,7 @@ export const getBookColumns = (authors: Author[], onEdit: (bookId: string) => vo
     enableHiding: false,
     cell: ({ row }) => {
       const book = row.original;
-      return <ActionsCell book={book} authors={authors} />;
+      return <ActionsCell book={book} authors={authors} users={users} />;
     },
   },
 ];

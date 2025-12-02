@@ -8,10 +8,8 @@ export default function BorrowedPage() {
   const { data: borrowedRecords, isLoading: borrowedLoading } = useList<BorrowedRecord>('borrowedRecords');
   const { data: books, isLoading: booksLoading } = useList<Book>('books');
   const { data: users, isLoading: usersLoading } = useList<User>('users');
-  const { data: authors, isLoading: authorsLoading } = useList<Author>('authors');
-
-
-  if (borrowedLoading || booksLoading || usersLoading || authorsLoading) {
+  
+  if (borrowedLoading || booksLoading || usersLoading) {
     return (
        <div className="flex flex-col gap-6">
         <header>
@@ -27,16 +25,17 @@ export default function BorrowedPage() {
     .map(record => {
         const book = (books || []).find(b => b.id === record.bookId);
         const user = (users || []).find(u => u.id === record.userId);
-        const author = (authors || []).find(a => a.id === book?.authorId);
 
-        if (!book || !user || !author) {
+        if (!book || !user) {
             return null;
         }
 
         return {
             id: record.id,
+            bookId: book.id,
+            userId: user.id,
             bookTitle: book.title,
-            authorName: author.name,
+            authorName: 'Unknown', // This would require another join with authors
             userName: user.name,
             borrowedDate: record.borrowedDate,
             dueDate: record.dueDate,
