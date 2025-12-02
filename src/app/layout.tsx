@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AppShell } from "@/components/layout/app-shell";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { DataSeeder } from "@/lib/data-seeder-client";
 
 const fontBody = Inter({
   subsets: ["latin"],
@@ -36,6 +37,7 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased", fontBody.variable, fontHeadline.variable)}>
         <FirebaseClientProvider>
+          <DataSeeder />
           <AppShell>
             {children}
           </AppShell>

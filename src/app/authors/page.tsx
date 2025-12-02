@@ -1,6 +1,26 @@
-import { authors } from "@/lib/data";
+'use client';
+import { useList } from "@/firebase";
+import { Author } from "@/lib/types";
 import { AuthorClientPage } from "./_components/author-client-page";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default async function AuthorsPage() {
-  return <AuthorClientPage authors={authors} />;
+export default function AuthorsPage() {
+  const { data: authors, isLoading } = useList<Author>('authors');
+
+  if (isLoading) {
+    return (
+       <div className="flex flex-col gap-6">
+        <header className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-5 w-72 mt-2" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </header>
+        <Skeleton className="w-full h-[400px]" />
+      </div>
+    )
+  }
+
+  return <AuthorClientPage authors={authors || []} />;
 }

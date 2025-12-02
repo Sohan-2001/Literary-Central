@@ -31,11 +31,16 @@ export const borrowedRecords: BorrowedRecord[] = [
   { id: '4', bookId: '7', userId: '3', borrowedDate: '2024-05-18', dueDate: '2024-06-08', returnedDate: null },
 ];
 
-export function getPopulatedBooks(): PopulatedBook[] {
+export function getPopulatedBooks(books: Book[], authors: Author[]): PopulatedBook[] {
     return books.map(book => {
         const author = authors.find(a => a.id === book.authorId);
         if (!author) {
-            throw new Error(`Author not found for book with ID ${book.id}`);
+            // In a real app, you might want to handle this more gracefully
+            console.warn(`Author not found for book with ID ${book.id}`);
+            return {
+                ...book,
+                author: {id: 'unknown', name: 'Unknown Author', bio: '', birthDate: ''}
+            };
         }
         return {
             ...book,
@@ -44,14 +49,15 @@ export function getPopulatedBooks(): PopulatedBook[] {
     });
 }
 
-export function getPopulatedBorrowedRecords(): PopulatedBorrowedRecord[] {
+export function getPopulatedBorrowedRecords(borrowedRecords: BorrowedRecord[], books: Book[], users: User[], authors: Author[]): PopulatedBorrowedRecord[] {
     return borrowedRecords.map(record => {
         const book = books.find(b => b.id === record.bookId);
         const user = users.find(u => u.id === record.userId);
         const author = authors.find(a => a.id === book?.authorId);
 
         if (!book || !user || !author) {
-            throw new Error(`Data mismatch for record ${record.id}`);
+            console.warn(`Data mismatch for record ${record.id}`);
+            return null;
         }
 
         return {
@@ -63,5 +69,5 @@ export function getPopulatedBorrowedRecords(): PopulatedBorrowedRecord[] {
             dueDate: record.dueDate,
             status: record.returnedDate ? 'Returned' : 'On Loan',
         };
-    });
+    }).filter((record): record is PopulatedBorrowedRecord => record !== null);
 }

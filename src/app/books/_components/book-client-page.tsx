@@ -10,7 +10,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -26,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle } from "lucide-react";
 import { bookColumns } from "./book-columns";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 interface BookClientPageProps {
   books: PopulatedBook[];
@@ -160,5 +160,3 @@ export function BookClientPage({ books }: BookClientPageProps) {
     </div>
   );
 }
-
-import { Card, CardContent, CardHeader } from "@/components/ui/card";

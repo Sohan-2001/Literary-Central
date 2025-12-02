@@ -46,3 +46,10 @@ export type PopulatedBorrowedRecord = {
 export type UserWithBorrows = User & {
   borrowHistory: PopulatedBorrowedRecord[];
 };
+
+export type FirebaseData = {
+  authors: Record<string, Author>;
+  books: Record<string, Book>;
+  users: Record<string, User>;
+  borrowedRecords: Record<string, BorrowedRecord>;
+}

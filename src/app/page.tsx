@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -5,15 +7,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { BookOpen, Users, UserCircle, Library } from "lucide-react";
-import { books, authors, borrowedRecords } from "@/lib/data";
+import { useList } from "@/firebase";
+import { Book, Author, BorrowedRecord, User } from "@/lib/types";
 
 export default function DashboardPage() {
-  const totalBooks = books.length;
-  const totalAuthors = authors.length;
-  const booksOnLoan = borrowedRecords.filter(
+  const { data: books } = useList<Book>('books');
+  const { data: authors } = useList<Author>('authors');
+  const { data: borrowedRecords } = useList<BorrowedRecord>('borrowedRecords');
+  const { data: users } = useList<User>('users');
+
+
+  const totalBooks = books?.length || 0;
+  const totalAuthors = authors?.length || 0;
+  const booksOnLoan = (borrowedRecords || []).filter(
     (record) => record.returnedDate === null
   ).length;
-  const uniqueUsers = new Set(borrowedRecords.map((r) => r.userId)).size;
+  const uniqueUsers = users?.length || 0;
 
   return (
     <div className="flex flex-col gap-6">
