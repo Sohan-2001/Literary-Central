@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useFormState } from 'react-dom';
+import { useEffect, useRef, useActionState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -51,7 +50,7 @@ interface BookFormProps {
 const initialState: BookFormState = {};
 
 export function BookForm({ book, authors, onSuccess }: BookFormProps) {
-  const [state, formAction] = useFormState(saveBook, initialState);
+  const [state, formAction] = useActionState(saveBook, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
