@@ -23,8 +23,7 @@ import {
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle } from "lucide-react";
-import { userColumns } from "./user-columns";
+import { getUserColumns } from "./user-columns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 interface UserClientPageProps {
@@ -38,6 +37,8 @@ export function UserClientPage({ users }: UserClientPageProps) {
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
+
+  const userColumns = React.useMemo(() => getUserColumns(), []);
 
   const table = useReactTable({
     data: users,
@@ -67,10 +68,6 @@ export function UserClientPage({ users }: UserClientPageProps) {
             Manage library members.
           </p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
       </header>
        <Card className="shadow-sm">
         <CardHeader>
