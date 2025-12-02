@@ -1,14 +1,15 @@
 'use client';
 
-import { useList } from "@/firebase";
+import { useList, useUser } from "@/firebase";
 import { BookClientPage } from "./_components/book-client-page";
 import { Book, Author, PopulatedBook, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BooksPage() {
-  const { data: books, isLoading: booksLoading } = useList<Book>('books');
-  const { data: authors, isLoading: authorsLoading } = useList<Author>('authors');
-  const { data: users, isLoading: usersLoading } = useList<User>('users');
+  const { user } = useUser();
+  const { data: books, isLoading: booksLoading } = useList<Book>(user ? `${user.uid}/books`: null);
+  const { data: authors, isLoading: authorsLoading } = useList<Author>(user ? `${user.uid}/authors` : null);
+  const { data: users, isLoading: usersLoading } = useList<User>(user ? `${user.uid}/users` : null);
 
 
   if (booksLoading || authorsLoading || usersLoading) {

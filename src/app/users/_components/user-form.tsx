@@ -17,8 +17,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { useDatabase } from '@/firebase';
-import { ref, set, update } from 'firebase/database';
+import { useDatabase, useUser } from '@/firebase';
+import { ref, set, update, push } from 'firebase/database';
 
 const userFormSchema = z.object({
   id: z.string().optional(),
@@ -37,6 +37,7 @@ interface UserFormProps {
 export function UserForm({ user, onSuccess }: UserFormProps) {
   const { toast } = useToast();
   const database = useDatabase();
+  const { user: authUser } = useUser();
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
@@ -50,18 +51,26 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
   });
 
   const handleClientSubmit = async (data: UserFormValues) => {
+    if (!authUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to save a user.',
+      });
+      return;
+    }
     try {
       if (user?.id) {
-        const userRef = ref(database, `users/${user.id}`);
+        const userRef = ref(database, `${authUser.uid}/users/${user.id}`);
         await update(userRef, data);
         toast({
           title: 'Success',
           description: 'User updated successfully.',
         });
       } else {
-        const newUserId = 'user' + new Date().getTime() + Math.floor(Math.random() * 1000);
-        const userRef = ref(database, `users/${newUserId}`);
-        await set(userRef, { ...data, id: newUserId });
+        const usersRef = ref(database, `${authUser.uid}/users`);
+        const newUserRef = push(usersRef);
+        await set(newUserRef, { ...data, id: newUserRef.key });
         toast({
           title: 'Success',
           description: 'User created successfully.',

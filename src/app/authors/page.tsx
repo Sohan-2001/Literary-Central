@@ -1,11 +1,12 @@
 'use client';
-import { useList } from "@/firebase";
+import { useList, useUser } from "@/firebase";
 import { Author } from "@/lib/types";
 import { AuthorClientPage } from "./_components/author-client-page";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AuthorsPage() {
-  const { data: authors, isLoading } = useList<Author>('authors');
+  const { user } = useUser();
+  const { data: authors, isLoading } = useList<Author>(user ? `${user.uid}/authors` : null);
 
   if (isLoading) {
     return (

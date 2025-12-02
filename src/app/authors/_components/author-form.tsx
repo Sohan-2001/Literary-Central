@@ -17,8 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Author } from '@/lib/types';
-import { useDatabase } from '@/firebase';
-import { ref, set, update } from 'firebase/database';
+import { useDatabase, useUser } from '@/firebase';
+import { ref, set, update, push } from 'firebase/database';
 
 const authorFormSchema = z.object({
   id: z.string().optional(),
@@ -37,6 +37,7 @@ interface AuthorFormProps {
 export function AuthorForm({ author, onSuccess }: AuthorFormProps) {
   const { toast } = useToast();
   const database = useDatabase();
+  const { user: authUser } = useUser();
 
   const form = useForm<AuthorFormValues>({
     resolver: zodResolver(authorFormSchema),
@@ -50,10 +51,18 @@ export function AuthorForm({ author, onSuccess }: AuthorFormProps) {
   });
 
   const handleClientSubmit = async (data: AuthorFormValues) => {
+    if (!authUser) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to save an author.',
+        });
+        return;
+    }
     try {
       if (author?.id) {
         // Update existing author
-        const authorRef = ref(database, `authors/${author.id}`);
+        const authorRef = ref(database, `${authUser.uid}/authors/${author.id}`);
         await update(authorRef, data);
         toast({
           title: 'Success',
@@ -61,9 +70,9 @@ export function AuthorForm({ author, onSuccess }: AuthorFormProps) {
         });
       } else {
         // Create new author
-        const newAuthorId = 'author' + new Date().getTime() + Math.floor(Math.random() * 1000);
-        const authorRef = ref(database, `authors/${newAuthorId}`);
-        await set(authorRef, { ...data, id: newAuthorId });
+        const authorsRef = ref(database, `${authUser.uid}/authors`);
+        const newAuthorRef = push(authorsRef);
+        await set(newAuthorRef, { ...data, id: newAuthorRef.key });
         toast({
           title: 'Success',
           description: 'Author created successfully.',

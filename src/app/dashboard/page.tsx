@@ -7,14 +7,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { BookOpen, Users, UserCircle, Library } from "lucide-react";
-import { useList } from "@/firebase";
+import { useList, useUser } from "@/firebase";
 import { Book, Author, BorrowedRecord, User } from "@/lib/types";
 
 export default function DashboardPage() {
-  const { data: books } = useList<Book>('books');
-  const { data: authors } = useList<Author>('authors');
-  const { data: borrowedRecords } = useList<BorrowedRecord>('borrowedRecords');
-  const { data: users } = useList<User>('users');
+  const { user: authUser } = useUser();
+  const { data: books } = useList<Book>(authUser ? `${authUser.uid}/books` : null);
+  const { data: authors } = useList<Author>(authUser ? `${authUser.uid}/authors` : null);
+  const { data: borrowedRecords } = useList<BorrowedRecord>(authUser ? `${authUser.uid}/borrowedRecords` : null);
+  const { data: users } = useList<User>(authUser ? `${authUser.uid}/users` : null);
 
 
   const totalBooks = books?.length || 0;

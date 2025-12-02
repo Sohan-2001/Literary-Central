@@ -34,8 +34,8 @@ import Image from "next/image";
 import React from "react";
 import { BookForm } from "./book-form";
 import { useToast } from "@/hooks/use-toast";
-import { useDatabase } from "@/firebase";
-import { ref, remove, update } from "firebase/database";
+import { useDatabase, useUser } from "@/firebase";
+import { ref, remove } from "firebase/database";
 import { BorrowForm } from "./borrow-form";
 
 function ActionsCell({
@@ -51,8 +51,17 @@ function ActionsCell({
   const [isBorrowDialogOpen, setIsBorrowDialogOpen] = React.useState(false);
   const { toast } = useToast();
   const database = useDatabase();
+  const { user: authUser } = useUser();
 
   const handleDelete = async () => {
+    if (!authUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to delete a book.',
+      });
+      return;
+    }
     if (book.status === 'borrowed') {
       toast({
         variant: 'destructive',
@@ -63,7 +72,7 @@ function ActionsCell({
     }
 
     try {
-      const bookRef = ref(database, `books/${book.id}`);
+      const bookRef = ref(database, `${authUser.uid}/books/${book.id}`);
       await remove(bookRef);
       toast({
         title: 'Success',

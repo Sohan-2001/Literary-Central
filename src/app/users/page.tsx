@@ -1,11 +1,12 @@
 'use client';
-import { useList } from "@/firebase";
+import { useList, useUser } from "@/firebase";
 import { User } from "@/lib/types";
 import { UserClientPage } from "./_components/user-client-page";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UsersPage() {
-  const { data: users, isLoading } = useList<User>('users');
+  const { user } = useUser();
+  const { data: users, isLoading } = useList<User>(user ? `${user.uid}/users` : null);
 
   if (isLoading) {
     return (

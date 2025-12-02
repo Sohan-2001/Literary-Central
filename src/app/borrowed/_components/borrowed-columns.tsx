@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal, ArrowUpDown } from 'lucide-react';
-import { useDatabase } from '@/firebase';
+import { useDatabase, useUser } from '@/firebase';
 import { ref, update } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -30,12 +30,21 @@ import { format } from 'date-fns';
 function ActionsCell({ record }: { record: PopulatedBorrowedRecord }) {
   const database = useDatabase();
   const { toast } = useToast();
+  const { user: authUser } = useUser();
 
   const handleMarkAsReturned = async () => {
+    if (!authUser) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to perform this action.',
+        });
+        return;
+    }
     try {
       const updates: { [key: string]: any } = {};
-      updates[`/borrowedRecords/${record.id}/returnedDate`] = format(new Date(), 'yyyy-MM-dd');
-      updates[`/books/${record.bookId}/status`] = 'available';
+      updates[`/${authUser.uid}/borrowedRecords/${record.id}/returnedDate`] = format(new Date(), 'yyyy-MM-dd');
+      updates[`/${authUser.uid}/books/${record.bookId}/status`] = 'available';
 
       await update(ref(database), updates);
 

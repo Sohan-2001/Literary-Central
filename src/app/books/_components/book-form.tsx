@@ -24,8 +24,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Author, Book } from '@/lib/types';
-import { useDatabase } from '@/firebase';
-import { ref, set, update } from 'firebase/database';
+import { useDatabase, useUser } from '@/firebase';
+import { ref, set, update, push } from 'firebase/database';
 
 const bookFormSchema = z.object({
   id: z.string().optional(),
@@ -49,6 +49,7 @@ interface BookFormProps {
 export function BookForm({ book, authors, onSuccess }: BookFormProps) {
   const { toast } = useToast();
   const database = useDatabase();
+  const { user: authUser } = useUser();
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
@@ -66,10 +67,18 @@ export function BookForm({ book, authors, onSuccess }: BookFormProps) {
   });
   
   const handleClientSubmit = async (data: BookFormValues) => {
+    if (!authUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to save a book.',
+      });
+      return;
+    }
       try {
         if (book?.id) {
           // Update existing book
-          const bookRef = ref(database, `books/${book.id}`);
+          const bookRef = ref(database, `${authUser.uid}/books/${book.id}`);
           await update(bookRef, data);
           toast({
             title: 'Success',
@@ -77,9 +86,9 @@ export function BookForm({ book, authors, onSuccess }: BookFormProps) {
           });
         } else {
           // Create new book
-          const newBookId = 'book' + new Date().getTime() + Math.floor(Math.random() * 1000);
-          const bookRef = ref(database, `books/${newBookId}`);
-          await set(bookRef, { ...data, id: newBookId });
+          const booksRef = ref(database, `${authUser.uid}/books`);
+          const newBookRef = push(booksRef);
+          await set(newBookRef, { ...data, id: newBookRef.key });
            toast({
             title: 'Success',
             description: 'Book created successfully.'

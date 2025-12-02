@@ -31,7 +31,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, ArrowUpDown } from "lucide-react";
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useDatabase } from "@/firebase";
+import { useDatabase, useUser as useAuthUser } from "@/firebase";
 import { ref, remove } from "firebase/database";
 import { UserForm } from "./user-form";
 
@@ -39,10 +39,19 @@ function ActionsCell({ user }: { user: User }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const { toast } = useToast();
   const database = useDatabase();
+  const { user: authUser } = useAuthUser();
 
   const handleDelete = async () => {
+    if (!authUser) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "You must be logged in to delete a user.",
+      });
+      return;
+    }
     try {
-      const userRef = ref(database, `users/${user.id}`);
+      const userRef = ref(database, `${authUser.uid}/users/${user.id}`);
       await remove(userRef);
       toast({
         title: "Success",

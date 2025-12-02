@@ -1,13 +1,14 @@
 'use client';
-import { useList } from "@/firebase";
+import { useList, useUser } from "@/firebase";
 import { Book, User, BorrowedRecord, PopulatedBorrowedRecord } from "@/lib/types";
 import { BorrowedClientPage } from "./_components/borrowed-client-page";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BorrowedPage() {
-  const { data: borrowedRecords, isLoading: borrowedLoading } = useList<BorrowedRecord>('borrowedRecords');
-  const { data: books, isLoading: booksLoading } = useList<Book>('books');
-  const { data: users, isLoading: usersLoading } = useList<User>('users');
+  const { user: authUser } = useUser();
+  const { data: borrowedRecords, isLoading: borrowedLoading } = useList<BorrowedRecord>(authUser ? `${authUser.uid}/borrowedRecords` : null);
+  const { data: books, isLoading: booksLoading } = useList<Book>(authUser ? `${authUser.uid}/books` : null);
+  const { data: users, isLoading: usersLoading } = useList<User>(authUser ? `${authUser.uid}/users` : null);
   
   if (borrowedLoading || booksLoading || usersLoading) {
     return (

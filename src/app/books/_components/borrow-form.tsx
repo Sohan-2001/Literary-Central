@@ -23,8 +23,8 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import type { Book, User } from '@/lib/types';
-import { useDatabase } from '@/firebase';
-import { ref, set, update } from 'firebase/database';
+import { useDatabase, useUser } from '@/firebase';
+import { ref, set, update, push } from 'firebase/database';
 
 const borrowFormSchema = z.object({
   userId: z.string().min(1, 'User is required'),
@@ -41,6 +41,7 @@ interface BorrowFormProps {
 export function BorrowForm({ book, users, onSuccess }: BorrowFormProps) {
   const { toast } = useToast();
   const database = useDatabase();
+  const { user: authUser } = useUser();
 
   const form = useForm<BorrowFormValues>({
     resolver: zodResolver(borrowFormSchema),
@@ -50,15 +51,23 @@ export function BorrowForm({ book, users, onSuccess }: BorrowFormProps) {
   });
 
   const handleClientSubmit = async (data: BorrowFormValues) => {
+    if (!authUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to borrow a book.',
+      });
+      return;
+    }
     try {
       const borrowedDate = new Date();
       const dueDate = add(borrowedDate, { weeks: 2 });
       
-      const newBorrowId = `borrow` + new Date().getTime() + Math.floor(Math.random() * 1000);
-      const borrowRef = ref(database, `borrowedRecords/${newBorrowId}`);
+      const borrowRef = ref(database, `${authUser.uid}/borrowedRecords`);
+      const newBorrowRef = push(borrowRef);
       
       const newRecord = {
-          id: newBorrowId,
+          id: newBorrowRef.key,
           bookId: book.id,
           userId: data.userId,
           borrowedDate: format(borrowedDate, 'yyyy-MM-dd'),
@@ -66,9 +75,9 @@ export function BorrowForm({ book, users, onSuccess }: BorrowFormProps) {
           returnedDate: null,
       }
 
-      await set(borrowRef, newRecord);
+      await set(newBorrowRef, newRecord);
 
-      const bookRef = ref(database, `books/${book.id}`);
+      const bookRef = ref(database, `${authUser.uid}/books/${book.id}`);
       await update(bookRef, { status: 'borrowed' });
 
       toast({
