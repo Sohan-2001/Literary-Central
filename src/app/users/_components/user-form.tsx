@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useDatabase } from '@/firebase';
-import { ref, update } from 'firebase/database';
+import { ref, set, update } from 'firebase/database';
 
 const userFormSchema = z.object({
   id: z.string().optional(),
@@ -29,7 +30,7 @@ const userFormSchema = z.object({
 type UserFormValues = z.infer<typeof userFormSchema>;
 
 interface UserFormProps {
-  user: User;
+  user?: User;
   onSuccess?: () => void;
 }
 
@@ -39,17 +40,34 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
-    defaultValues: user,
+    defaultValues: user
+      ? { ...user, memberSince: user.memberSince.split('T')[0] }
+      : {
+          name: '',
+          email: '',
+          memberSince: format(new Date(), 'yyyy-MM-dd'),
+        },
   });
 
   const handleClientSubmit = async (data: UserFormValues) => {
     try {
-      const userRef = ref(database, `users/${user.id}`);
-      await update(userRef, data);
-      toast({
-        title: 'Success',
-        description: 'User updated successfully.',
-      });
+      if (user?.id) {
+        const userRef = ref(database, `users/${user.id}`);
+        await update(userRef, data);
+        toast({
+          title: 'Success',
+          description: 'User updated successfully.',
+        });
+      } else {
+        const newUserId = 'user' + new Date().getTime() + Math.floor(Math.random() * 1000);
+        const userRef = ref(database, `users/${newUserId}`);
+        await set(userRef, { ...data, id: newUserId });
+        toast({
+          title: 'Success',
+          description: 'User created successfully.',
+        });
+      }
+
       onSuccess?.();
     } catch (e: any) {
       toast({
@@ -63,7 +81,7 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleClientSubmit)} className="space-y-4">
-        <input type="hidden" {...form.register('id')} value={user.id} />
+        {user && <input type="hidden" {...form.register('id')} value={user.id} />}
 
         <FormField
           control={form.control}
@@ -86,7 +104,7 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="jane.doe@example.com" {...field} disabled />
+                <Input type="email" placeholder="jane.doe@example.com" {...field} disabled={!!user} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -100,7 +118,7 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
             <FormItem>
               <FormLabel>Member Since</FormLabel>
               <FormControl>
-                <Input type="date" {...field} disabled />
+                <Input type="date" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -108,7 +126,7 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
         />
 
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          Save Changes
+          {user ? 'Save Changes' : 'Create User'}
         </Button>
       </form>
     </Form>

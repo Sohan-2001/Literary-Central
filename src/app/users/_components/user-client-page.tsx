@@ -25,6 +25,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getUserColumns } from "./user-columns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { PlusCircle } from "lucide-react";
+import { UserForm } from "./user-form";
 
 interface UserClientPageProps {
   users: User[];
@@ -37,6 +46,7 @@ export function UserClientPage({ users }: UserClientPageProps) {
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
+  const [isFormOpen, setIsFormOpen] = React.useState(false);
 
   const userColumns = React.useMemo(() => getUserColumns(), []);
 
@@ -68,6 +78,20 @@ export function UserClientPage({ users }: UserClientPageProps) {
             Manage library members.
           </p>
         </div>
+         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add User
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add a New User</DialogTitle>
+            </DialogHeader>
+            <UserForm onSuccess={() => setIsFormOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </header>
        <Card className="shadow-sm">
         <CardHeader>

@@ -78,7 +78,7 @@ function ActionsCell({ user }: { user: User }) {
               >
                 Edit User
               </DropdownMenuItem>
-              <DropdownMenuItem>View Borrowing History</DropdownMenuItem>
+              <DropdownMenuItem disabled>View Borrowing History</DropdownMenuItem>
               <DropdownMenuSeparator />
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem
