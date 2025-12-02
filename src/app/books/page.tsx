@@ -1,7 +1,6 @@
 'use client';
 
 import { useList } from "@/firebase";
-import { getPopulatedBooks } from "@/lib/data";
 import { BookClientPage } from "./_components/book-client-page";
 import { Book, Author, PopulatedBook } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,5 +33,5 @@ export default function BooksPage() {
   });
 
 
-  return <BookClientPage books={populatedBooks} />;
+  return <BookClientPage books={populatedBooks} authors={authors || []} />;
 }

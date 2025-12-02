@@ -1,6 +1,6 @@
 "use client";
 
-import type { PopulatedBook } from "@/lib/types";
+import type { Author, PopulatedBook } from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -24,20 +24,32 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle } from "lucide-react";
-import { bookColumns } from "./book-columns";
+import { getBookColumns } from "./book-columns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { BookForm } from "./book-form";
 
 interface BookClientPageProps {
   books: PopulatedBook[];
+  authors: Author[];
 }
 
-export function BookClientPage({ books }: BookClientPageProps) {
+export function BookClientPage({ books, authors }: BookClientPageProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
+  const [isFormOpen, setIsFormOpen] = React.useState(false);
+
+  const bookColumns = React.useMemo(() => getBookColumns(authors, () => setIsFormOpen(true)), [authors]);
 
   const table = useReactTable({
     data: books,
@@ -67,24 +79,32 @@ export function BookClientPage({ books }: BookClientPageProps) {
             Manage your library's book collection.
           </p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Book
-        </Button>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Book
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add a New Book</DialogTitle>
+            </DialogHeader>
+            <BookForm authors={authors} onSuccess={() => setIsFormOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </header>
 
       <Card className="shadow-sm">
         <CardHeader>
-             <Input
-                placeholder="Filter books by title..."
-                value={
-                  (table.getColumn("title")?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) =>
-                  table.getColumn("title")?.setFilterValue(event.target.value)
-                }
-                className="max-w-sm"
-              />
+          <Input
+            placeholder="Filter books by title..."
+            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("title")?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
