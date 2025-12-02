@@ -1,16 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useActionState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,7 +24,6 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Author, Book } from '@/lib/types';
-import { saveBookAction, type BookFormState } from '../_components/book-actions';
 import { useDatabase } from '@/firebase';
 import { ref, set, update } from 'firebase/database';
 
@@ -50,16 +46,8 @@ interface BookFormProps {
   onSuccess?: () => void;
 }
 
-const initialState: BookFormState = {
-    message: '',
-    errors: {},
-    success: false,
-};
-
 export function BookForm({ book, authors, onSuccess }: BookFormProps) {
-  const [state, formAction] = useActionState(saveBookAction, initialState);
   const { toast } = useToast();
-  const formRef = useRef<HTMLFormElement>(null);
   const database = useDatabase();
 
   const form = useForm<BookFormValues>({
@@ -83,16 +71,20 @@ export function BookForm({ book, authors, onSuccess }: BookFormProps) {
           // Update existing book
           const bookRef = ref(database, `books/${book.id}`);
           await update(bookRef, data);
+          toast({
+            title: 'Success',
+            description: 'Book updated successfully.'
+          });
         } else {
           // Create new book
           const newBookId = 'book' + new Date().getTime() + Math.floor(Math.random() * 1000);
           const bookRef = ref(database, `books/${newBookId}`);
           await set(bookRef, { ...data, id: newBookId });
+           toast({
+            title: 'Success',
+            description: 'Book created successfully.'
+          });
         }
-        toast({
-          title: 'Success',
-          description: 'Book saved successfully.'
-        });
         onSuccess?.();
       } catch (e: any) {
         toast({
@@ -103,31 +95,13 @@ export function BookForm({ book, authors, onSuccess }: BookFormProps) {
       }
   }
 
-
-  useEffect(() => {
-    if (state.message && !state.success) {
-        toast({
-          variant: 'destructive',
-          title: 'Error saving book',
-          description: state.message,
-        });
-    }
-  }, [state, toast]);
-
   return (
     <Form {...form}>
       <form
-        ref={formRef}
-        action={formAction}
-        onSubmit={form.handleSubmit(() => {
-            // Trigger the server action
-            formAction(new FormData(formRef.current!));
-            // Also trigger the client-side database logic
-            handleClientSubmit(form.getValues());
-        })}
+        onSubmit={form.handleSubmit(handleClientSubmit)}
         className="space-y-4"
       >
-        {book && <input type="hidden" name="id" value={book.id} />}
+        {book && <input type="hidden" {...form.register("id")} value={book.id} />}
         
         <FormField
           control={form.control}
@@ -224,7 +198,7 @@ export function BookForm({ book, authors, onSuccess }: BookFormProps) {
           )}
         />
         
-        <input type="hidden" name="status" value={book?.status || 'available'} />
+        <input type="hidden" {...form.register("status")} value={book?.status || 'available'} />
 
         <Button type="submit" disabled={form.formState.isSubmitting}>
           {book ? 'Save Changes' : 'Create Book'}

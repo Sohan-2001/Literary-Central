@@ -1,5 +1,8 @@
 'use server';
 
+// This file is no longer used for database operations
+// but is kept for potential future server action needs.
+
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -29,11 +32,12 @@ export type BookFormState = {
 };
 
 // This function is now a placeholder as the logic is moved to the client.
-// It will still be called by the form, but the client-side logic will handle the database operations.
 export async function saveBookAction(
   prevState: BookFormState,
   formData: FormData
 ): Promise<BookFormState> {
+  
+  // This can be used for server-side validation if needed in the future.
   const validatedFields = bookSchema.safeParse(
     Object.fromEntries(formData.entries())
   );
@@ -41,15 +45,14 @@ export async function saveBookAction(
   if (!validatedFields.data) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Failed to save book. Please check the fields.',
+      message: 'Validation failed on server.',
       success: false,
     };
   }
 
-  // We are not performing the database operation here anymore.
-  // Instead, we revalidate the path and return a success message.
-  // The actual database call is now handled on the client in book-form.tsx.
-
+  // Revalidate the path to ensure data is fresh on the client
   revalidatePath('/books');
-  return { message: 'Book saved successfully.', success: true };
+  
+  // Return a generic success message as client handles the toast.
+  return { message: 'Server action completed.', success: true };
 }
