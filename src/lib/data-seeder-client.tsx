@@ -1,8 +1,7 @@
 'use client';
 
-import { useDataSeeder } from './data-seeder';
+// This component is now empty and does nothing.
 
 export function DataSeeder() {
-  useDataSeeder();
   return null;
 }

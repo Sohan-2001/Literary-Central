@@ -12,9 +12,10 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
+import { useUser } from "@/firebase";
 
 const links = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/books", label: "Books", icon: BookOpen },
   { href: "/authors", label: "Authors", icon: UserCircle },
   { href: "/users", label: "Users", icon: Users },
@@ -23,11 +24,16 @@ const links = [
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { user } = useUser();
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-lg group-data-[collapsible=icon]:hidden">
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold font-headline text-lg group-data-[collapsible=icon]:hidden">
           <BookMarked className="h-6 w-6 text-sidebar-primary" />
           <span>Literary Central</span>
         </Link>

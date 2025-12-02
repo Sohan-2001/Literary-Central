@@ -1,90 +1,53 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { BookOpen, Users, UserCircle, Library } from "lucide-react";
-import { useList } from "@/firebase";
-import { Book, Author, BorrowedRecord, User } from "@/lib/types";
+import { Button } from '@/components/ui/button';
+import { useAuth, useUser } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { LogIn } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-export default function DashboardPage() {
-  const { data: books } = useList<Book>('books');
-  const { data: authors } = useList<Author>('authors');
-  const { data: borrowedRecords } = useList<BorrowedRecord>('borrowedRecords');
-  const { data: users } = useList<User>('users');
+export default function LandingPage() {
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
 
+  const handleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error('Error signing in with Google', error);
+    }
+  };
 
-  const totalBooks = books?.length || 0;
-  const totalAuthors = authors?.length || 0;
-  const booksOnLoan = (borrowedRecords || []).filter(
-    (record) => record.returnedDate === null
-  ).length;
-  const uniqueUsers = users?.length || 0;
+  useEffect(() => {
+    if (user) {
+      router.replace('/dashboard');
+    }
+  }, [user, router]);
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight font-headline">
-          Dashboard
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold tracking-tight font-headline">
+          Welcome to Literary Central
         </h1>
-        <p className="text-muted-foreground">
-          Welcome to Literary Central. Here's an overview of your library.
+        <p className="mt-4 text-lg text-muted-foreground">
+          Your personal library management system.
         </p>
-      </header>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Books</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalBooks}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all genres and authors
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Registered Authors
-            </CardTitle>
-            <UserCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalAuthors}</div>
-            <p className="text-xs text-muted-foreground">
-              Creators of worlds
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Books on Loan</CardTitle>
-            <Library className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{booksOnLoan}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently borrowed by users
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{uniqueUsers}</div>
-            <p className="text-xs text-muted-foreground">
-              Users with borrowing history
-            </p>
-          </CardContent>
-        </Card>
+        <Button onClick={handleSignIn} size="lg" className="mt-8">
+          <LogIn className="mr-2 h-5 w-5" />
+          Sign in with Google
+        </Button>
       </div>
     </div>
   );
