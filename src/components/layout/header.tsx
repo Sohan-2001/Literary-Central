@@ -2,9 +2,11 @@
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { PanelLeft, BookMarked, LayoutDashboard, BookOpen, UserCircle, Users, Library } from "lucide-react";
+import { PanelLeft, BookMarked, LayoutDashboard, BookOpen, UserCircle, Users, Library, LogIn, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth, useUser } from "@/firebase";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
 const links = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -17,6 +19,25 @@ const links = [
 export function Header() {
   const pathname = usePathname();
   const pageTitle = links.find(link => link.href === pathname)?.label || 'Dashboard';
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  const handleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Error signing in with Google", error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out", error);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -54,6 +75,21 @@ export function Header() {
         </SheetContent>
       </Sheet>
        <h1 className="text-xl font-semibold font-headline hidden md:block">{pageTitle}</h1>
+       <div className="ml-auto">
+        {!isUserLoading && (
+          user ? (
+            <Button onClick={handleSignOut} variant="outline">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          ) : (
+            <Button onClick={handleSignIn}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Sign In
+            </Button>
+          )
+        )}
+       </div>
     </header>
   );
 }
