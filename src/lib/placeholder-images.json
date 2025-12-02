@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "book-cover-1",
+      "description": "Abstract book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1633981014915-5cdb8d20eab1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGJvb2t8ZW58MHx8fHwxNzY0NjYyMzkxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract book"
+    },
+    {
+      "id": "book-cover-2",
+      "description": "Geometric book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1628160634750-a81a2a780805?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxnZW9tZXRyaWMlMjBwYXR0ZXJufGVufDB8fHx8MTc2NDY1NDgxNnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "geometric pattern"
+    },
+    {
+      "id": "book-cover-3",
+      "description": "Nature themed book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1600711503545-b13de35dac05?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxuYXR1cmUlMjBmb3Jlc3R8ZW58MHx8fHwxNzY0NjIxNDY2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "nature forest"
+    },
+    {
+      "id": "book-cover-4",
+      "description": "Minimalist book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1640610716374-565003b0dfde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwZGVzaWdufGVufDB8fHx8MTc2NDY3NjMyMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "minimalist design"
+    },
+    {
+      "id": "book-cover-5",
+      "description": "Sci-fi book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1687985826611-80b714011d0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzY2ktZmklMjBzcGFjZXxlbnwwfHx8fDE3NjQ2Nzc2MTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sci-fi space"
+    },
+    {
+      "id": "book-cover-6",
+      "description": "Fantasy book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1505159940484-eb2b9f2588e2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmYW50YXN5JTIwY2FzdGxlfGVufDB8fHx8MTc2NDU1ODU3N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fantasy castle"
+    }
+  ]
 }
