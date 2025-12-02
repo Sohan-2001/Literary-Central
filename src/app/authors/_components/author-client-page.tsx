@@ -24,8 +24,16 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle } from "lucide-react";
-import { authorColumns } from "./author-columns";
+import { getAuthorColumns } from "./author-columns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { AuthorForm } from "./author-form";
 
 interface AuthorClientPageProps {
   authors: Author[];
@@ -38,6 +46,9 @@ export function AuthorClientPage({ authors }: AuthorClientPageProps) {
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
+  const [isFormOpen, setIsFormOpen] = React.useState(false);
+  
+  const authorColumns = React.useMemo(() => getAuthorColumns(), []);
 
   const table = useReactTable({
     data: authors,
@@ -67,10 +78,20 @@ export function AuthorClientPage({ authors }: AuthorClientPageProps) {
             Manage the authors in your library.
           </p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Author
-        </Button>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Author
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add a New Author</DialogTitle>
+            </DialogHeader>
+            <AuthorForm onSuccess={() => setIsFormOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </header>
 
       <Card className="shadow-sm">
