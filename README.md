@@ -60,3 +60,4 @@ Literary Central leverages a powerful **client-side architecture** with Firebase
 3.  **Manage**: You can start adding authors, creating books, and managing your library immediately.
 
 Enjoy managing your collection with Literary Central!
+# Literary-Central
